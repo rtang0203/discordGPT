@@ -48,7 +48,7 @@ def update_llm_chain():
     global llm_chain
     global llm
     global prompt
-    #global memory
+    global memory
     llm_chain = LLMChain(prompt=prompt, llm=llm, memory=memory)
 
 @bot.command()
