@@ -1,0 +1,2 @@
+# discordGPT
+discord gpt bot
