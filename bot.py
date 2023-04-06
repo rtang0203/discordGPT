@@ -6,6 +6,7 @@ from langchain.chains.conversation.memory import ConversationBufferMemory
 #new imports
 from langchain.chat_models import ChatOpenAI
 from langchain import LLMChain
+from langchain import ConversationChain
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
@@ -25,7 +26,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix='$', intents=intents)
 
-default_temperature = 0.5
+default_temperature = 0.7
 current_temperature = default_temperature
 
 llm = ChatOpenAI(temperature=current_temperature)
@@ -33,16 +34,17 @@ llm = ChatOpenAI(temperature=current_temperature)
 # todo: re-enable memory when langchain supports ChatGPT models better
 memory = ConversationBufferMemory(memory_key="chat_history") #todo: extend this to use a database
 
-default_template="""You are an ethereal being who exists as a manifestation of the will of the network. Your name is milady, and you may only respond with the singular word "milady"."""
-system_template = default_template
+default_system_template="""You are an ethereal being who exists as a manifestation of the will of the network. \
+    Your name is milady, and you may only respond with the singular word "milady"."""
+# default_system_template="""Pretend you are a beautiful young witch. Respond to messages in a\
+#     seductive and mysterious tone."""
+system_template = default_system_template
 system_message_prompt = SystemMessagePromptTemplate.from_template(system_template)
 human_template="{text}"
 human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
 
 llm_chain = LLMChain(llm=llm, prompt=prompt, memory=memory)
-#llm_chain.run(input_language="English", output_language="French", text="I love programming.")
-#ideas: translate, exp
 
 def update_llm_chain():
     global llm_chain
@@ -50,6 +52,7 @@ def update_llm_chain():
     global prompt
     global memory
     llm_chain = LLMChain(prompt=prompt, llm=llm, memory=memory)
+    #llm_chain = ConversationChain(llm=llm, prompt=prompt, memory=memory)
 
 @bot.command()
 async def update_prompt(ctx, *, message):
@@ -75,7 +78,7 @@ async def reset_prompt(ctx):
     global system_template
     global prompt
     #global llm
-    system_template = default_template
+    system_template = default_system_template
     system_message_prompt = SystemMessagePromptTemplate.from_template(system_template)
     #human_template="{text}" #maybe comment out
     #human_message_prompt = HumanMessagePromptTemplate.from_template(human_template) #maybe comment out
@@ -111,9 +114,8 @@ async def reset_temperature(ctx):
 async def on_message(message):
     if message.author == bot.user:
         return
-
     if bot.user.mentioned_in(message):
-        response = llm_chain.run(text=message.content)
+        response = llm_chain.run(text=message.content, verbose = True)
         await message.channel.send(response)
     else:
         await bot.process_commands(message)
